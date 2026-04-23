@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>المشروع التفاعلي للاقترانات</title>
+
+<style>
+body{font-family:Arial;text-align:center;background:#f4f6f8}
+h1{color:#6a1b9a}
+canvas{border:2px solid black;background:white;margin-top:20px}
+button,input{margin:5px;padding:8px 14px;border-radius:8px;border:none}
+button{background:#6a1b9a;color:white;cursor:pointer}
+button:hover{background:#4a148c}
+#intro{position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,.6);display:flex;justify-content:center;align-items:center}
+.card{background:white;padding:30px;border-radius:15px;width:65%;text-align:right}
+</style>
+</head>
+
+<body>
+
+<div id="intro">
+<div class="card">
+<h2>المشروع التفاعلي لتمثيل الاقترانات</h2>
+<p>
+مشروع تفاعلي لشرح الاقترانات والتحويلات الهندسية والتكامل
+والمساحات والحجوم الدورانية بطريقة بصرية باستخدام البرمجة.
+</p>
+<ul>
+<li>اقترانات خطية وتربيعية ومثلثية</li>
+<li>الراديان بصيغة π</li>
+<li>التحويلات الهندسية</li>
+<li>التظليل بالتكامل</li>
+<li>المساحة بين منحنيين</li>
+<li>الحجوم الدورانية</li>
+</ul>
+<button onclick="start()">ابدأ</button>
+</div>
+</div>
+
+<h1>📊 تمثيل الاقترانات</h1>
+
+<canvas id="graph" width="800" height="420"></canvas>
+<br>
+
+<input id="customFunc" placeholder="مثال 3*x*x">
+<button onclick="setCustom()">اقتران خاص</button>
+
+<br>
+
+<button onclick="setFunc('linear')">خطي</button>
+<button onclick="setFunc('quad')">تربيعي</button>
+<button onclick="setFunc('abs')">|x|</button>
+<button onclick="setFunc('sin')">sin</button>
+<button onclick="setFunc('cos')">cos</button>
+<button onclick="setFunc('tan')">tan</button>
+
+<br>
+
+<button onclick="up()">↑</button>
+<button onclick="down()">↓</button>
+<button onclick="left()">→</button>
+<button onclick="right()">←</button>
+<button onclick="refX()">انعكاس X</button>
+<button onclick="refY()">انعكاس Y</button>
+
+<br>
+
+<button onclick="wide()">توسيع</button>
+<button onclick="narrow()">تضييق</button>
+
+<div id="scaleText">معامل التمدد = 1</div>
+
+<hr>
+
+<h3>⭐ المساحة بين منحنيين</h3>
+
+<input id="linExp" placeholder="اقتران أول">
+<input id="quadExp" placeholder="اقتران ثاني">
+
+من
+<input id="startX" type="number" value="-2">
+إلى
+<input id="endX" type="number" value="2">
+
+<br>
+
+<button onclick="drawTwo()">رسم المنحنيين</button>
+<button onclick="shadeBetween()">تظليل بالتكامل</button>
+<button onclick="areaBetween()">حساب المساحة</button>
+
+<div id="areaBetweenRes" style="font-weight:bold;color:#6a1b9a"></div>
+<div id="integralView" style="font-weight:bold;color:#d84315;font-size:18px"></div>
+
+<br>
+
+<button onclick="rotateVolume()">الحجم الدوراني</button>
+<div id="volumeResult" style="font-weight:bold;color:#00897b"></div>
+
+<script>
+
+const ctx=graph.getContext("2d");
+
+let func="quad";
+let shiftX=0,shiftY=0;
+let refx=1,refy=1;
+let scale=1;
+let custom="x*x";
+let lin,quad;
+
+function start(){ intro.style.display="none"; draw(); }
+
+function axes(){
+ctx.beginPath();
+ctx.moveTo(0,210); ctx.lineTo(800,210);
+ctx.moveTo(400,0); ctx.lineTo(400,420);
+ctx.stroke();
+
+ctx.font="12px Arial";
+
+for(let i=-4;i<=4;i++){
+let px=400+i*80;
+if(func==="sin"||func==="cos"||func==="tan"){
+let t=["-2π","-3π/2","-π","-π/2","0","π/2","π","3π/2","2π"];
+ctx.fillText(t[i+4],px,225);
+}else ctx.fillText(i,px,225);
+}
+
+for(let j=-3;j<=3;j++){
+ctx.fillText(j,405,210-j*60);
+}
+}
+
+function draw(){
+ctx.clearRect(0,0,800,420);
+axes();
+ctx.beginPath();
+ctx.strokeStyle="hsl("+Math.random()*360+",70%,45%)";
+
+for(let x=-200;x<=200;x++){
+let xt=(x*scale)/25;
+let y;
+
+if(func==="linear") y=xt*25;
+else if(func==="quad") y=xt*xt*25;
+else if(func==="abs") y=Math.abs(xt)*25;
+else if(func==="sin") y=Math.sin(xt)*70;
+else if(func==="cos") y=Math.cos(xt)*70;
+else if(func==="tan"){ y=Math.tan(xt)*40; if(Math.abs(y)>350) continue;}
+else if(func==="custom"){ try{y=eval(custom.replace(/x/g,"("+xt+")"))*25}catch{continue}}
+
+let px=400+(x-shiftX)*refy;
+let py=210-(y+shiftY)*refx;
+
+if(x===-200) ctx.moveTo(px,py);
+else ctx.lineTo(px,py);
+}
+ctx.stroke();
+}
+
+function setFunc(f){func=f;draw();}
+function setCustom(){custom=customFunc.value;func="custom";draw();}
+
+function up(){shiftY+=20;draw()}
+function down(){shiftY-=20;draw()}
+function left(){shiftX-=20;draw()}
+function right(){shiftX+=20;draw()}
+function refX(){refx*=-1;draw()}
+function refY(){refy*=-1;draw()}
+
+function wide(){scale-=1;if(scale<=0.2)scale=0.2;update();draw()}
+function narrow(){scale+=1;update();draw()}
+function update(){scaleText.innerHTML="معامل التمدد = "+scale}
+
+/* ✅ التعديل الوحيد هنا */
+function drawTwo(){
+ctx.clearRect(0,0,800,420);
+axes();
+
+// خطي y = x
+ctx.beginPath(); ctx.strokeStyle="blue";
+for(let x=-200;x<=200;x++){
+let xt=x/25;
+let y = xt * 25;
+let px=400+x; let py=210-y;
+if(x===-200)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+}
+ctx.stroke();
+
+// تربيعي y = x^2
+ctx.beginPath(); ctx.strokeStyle="red";
+for(let x=-200;x<=200;x++){
+let xt=x/25;
+let y = xt*xt * 25;
+let px=400+x; let py=210-y;
+if(x===-200)ctx.moveTo(px,py); else ctx.lineTo(px,py);
+}
+ctx.stroke();
+
+// تثبيتهم لباقي العمليات
+lin="x";
+quad="x*x";
+}
+
+function shadeBetween(){
+let a=parseFloat(startX.value);
+let b=parseFloat(endX.value);
+ctx.fillStyle="rgba(106,27,154,0.35)";
+
+for(let x=a;x<=b;x+=0.05){
+let y1=eval(lin.replace(/x/g,"("+x+")"));
+let y2=eval(quad.replace(/x/g,"("+x+")"));
+let top=Math.max(y1,y2);
+let bottom=Math.min(y1,y2);
+ctx.fillRect(400+x*25,210-top*25,2,(top-bottom)*25);
+}
+}
+
+function areaBetween(){
+let a=parseFloat(startX.value);
+let b=parseFloat(endX.value);
+let area=0;
+
+for(let x=a;x<=b;x+=0.02){
+let y1=eval(lin.replace(/x/g,"("+x+")"));
+let y2=eval(quad.replace(/x/g,"("+x+")"));
+area+=Math.abs(y1-y2)*0.02;
+}
+
+areaBetweenRes.innerHTML="المساحة ≈ "+area.toFixed(4);
+integralView.innerHTML="∫ من "+a+" إلى "+b+" |("+lin+")-("+quad+")| dx";
+}
+
+function rotateVolume(){
+let a=-3,b=3;
+let volume=0;
+ctx.beginPath();
+ctx.fillStyle="rgba(0,150,136,0.25)";
+
+for(let x=a;x<=b;x+=0.02){
+let y;
+if(func==="quad") y=x*x;
+else if(func==="linear") y=x;
+else if(func==="sin") y=Math.sin(x);
+else if(func==="cos") y=Math.cos(x);
+else if(func==="abs") y=Math.abs(x);
+else return;
+
+ctx.lineTo(400+x*25,210-y*25);
+volume+=Math.PI*y*y*0.02;
+}
+
+ctx.lineTo(400+b*25,210);
+ctx.lineTo(400+a*25,210);
+ctx.fill();
+
+volumeResult.innerHTML="الحجم الدوراني ≈ "+volume.toFixed(4);
+}
+
+draw();
+
+</script>
+</body>                
+</html>
